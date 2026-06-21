@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 패널 - 한국어 수업 관리</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div style="font-size:28px;margin-bottom:6px">🇰🇷</div>
+      <div class="logo-text">울산 외국인 근로자<br>지원센터</div>
+      <div class="logo-sub">한국어 수업 관리</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sidebarName">관리자</div>
+      <div class="user-role">👑 최고 관리자</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> 대시보드
+      </button>
+      <button class="nav-item" onclick="showPage('teachers')">
+        <span class="nav-icon">👩‍🏫</span> 선생님 관리
+      </button>
+      <button class="nav-item" onclick="showPage('students')">
+        <span class="nav-icon">👨‍🎓</span> 학생 관리
+      </button>
+      <button class="nav-item" onclick="showPage('groups')">
+        <span class="nav-icon">📚</span> 그룹/반 현황
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-item" onclick="logout()" style="color:#f87171">
+        <span class="nav-icon">🚪</span> 로그아웃
+      </button>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">대시보드</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:#64748b">관리자 패널</span>
+        <span style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">ADMIN</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div id="alertArea"></div>
+
+      <!-- ─── 대시보드 ─── -->
+      <div id="page-dashboard">
+        <div class="stat-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-icon blue">👩‍🏫</div>
+            <div><div class="stat-num" id="stat-teachers">-</div><div class="stat-label">선생님</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">📚</div>
+            <div><div class="stat-num" id="stat-groups">-</div><div class="stat-label">그룹/반</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon yellow">👨‍🎓</div>
+            <div><div class="stat-num" id="stat-students">-</div><div class="stat-label">등록 학생</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">📖</div>
+            <div><div class="stat-num" id="stat-lessons">-</div><div class="stat-label">총 수업 수</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">📋 최근 등록 학생</div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table id="recentTable">
+                <thead>
+                  <tr>
+                    <th>이름</th><th>성별</th><th>비자</th><th>국적</th><th>소속 반</th><th>담당 선생님</th><th>등록일</th>
+                  </tr>
+                </thead>
+                <tbody id="recentBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 선생님 관리 ─── -->
+      <div id="page-teachers" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:16px;font-weight:800">선생님 관리</h2>
+            <p style="color:#64748b;font-size:12px;margin-top:2px">선생님 계정을 추가하고 관리합니다</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('teacherModal')">
+            ➕ 선생님 추가
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>이름</th><th>아이디</th><th>담당 그룹</th><th>학생 수</th><th>등록일</th><th>관리</th></tr>
+                </thead>
+                <tbody id="teacherBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 학생 관리 ─── -->
+      <div id="page-students" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:16px;font-weight:800">학생 관리</h2>
+            <p style="color:#64748b;font-size:12px;margin-top:2px">학생을 등록하고 반에 배정합니다</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddStudentModal()">
+            ➕ 학생 추가
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-body" style="padding:12px 16px">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <div class="search-bar">
+                <span>🔍</span>
+                <input type="text" placeholder="이름으로 검색..." id="studentSearch" oninput="filterStudents()">
+              </div>
+              <select class="form-control" style="width:160px" id="groupFilter" onchange="filterStudents()">
+                <option value="">모든 반</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>이름</th><th>성별</th><th>국적</th><th>비자</th><th>전화번호</th><th>소속 반</th><th>담당 선생님</th><th>관리</th></tr>
+                </thead>
+                <tbody id="studentBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 그룹 현황 ─── -->
+      <div id="page-groups" style="display:none">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:16px;font-weight:800">그룹/반 현황</h2>
+          <p style="color:#64748b;font-size:12px;margin-top:2px">모든 반의 현황을 확인합니다</p>
+        </div>
+
+        <div id="groupCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 선생님 추가 모달 ─── -->
+<div class="modal-overlay" id="teacherModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>👩‍🏫 선생님 추가</span>
+      <button class="modal-close" onclick="closeModal('teacherModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>선생님 이름 *</label>
+        <input type="text" class="form-control" id="t_name" placeholder="예: 김민지">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>로그인 아이디 *</label>
+          <input type="text" class="form-control" id="t_username" placeholder="예: teacher01">
+        </div>
+        <div class="form-group">
+          <label>비밀번호 *</label>
+          <input type="password" class="form-control" id="t_password" placeholder="비밀번호 입력">
+        </div>
+      </div>
+      <div class="alert alert-info">
+        ℹ️ 선생님이 이 아이디와 비밀번호로 로그인합니다
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('teacherModal')">취소</button>
+      <button class="btn btn-primary" onclick="addTeacher()">✅ 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 비밀번호 변경 모달 ─── -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>🔑 비밀번호 변경</span>
+      <button class="modal-close" onclick="closeModal('pwModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:#64748b;font-size:13px;margin-bottom:16px" id="pwTeacherName"></p>
+      <div class="form-group">
+        <label>새 비밀번호 *</label>
+        <input type="password" class="form-control" id="newPassword" placeholder="새 비밀번호 입력">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pwModal')">취소</button>
+      <button class="btn btn-primary" onclick="changePassword()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 학생 추가/수정 모달 ─── -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span id="studentModalTitle">👨‍🎓 학생 추가</span>
+      <button class="modal-close" onclick="closeModal('studentModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="s_id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>이름 (한국어/영어) *</label>
+          <input type="text" class="form-control" id="s_name" placeholder="예: 우트키르 코디로프">
+        </div>
+        <div class="form-group">
+          <label>성별</label>
+          <select class="form-control" id="s_gender">
+            <option value="">선택</option>
+            <option value="남">남 (Male)</option>
+            <option value="여">여 (Female)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>국적</label>
+          <input type="text" class="form-control" id="s_nationality" placeholder="예: 우즈베키스탄">
+        </div>
+        <div class="form-group">
+          <label>비자 종류</label>
+          <select class="form-control" id="s_visa">
+            <option value="">선택</option>
+            <option value="E-9">E-9 (비전문취업)</option>
+            <option value="E-7">E-7 (특정활동)</option>
+            <option value="H-2">H-2 (방문취업)</option>
+            <option value="F-4">F-4 (재외동포)</option>
+            <option value="F-6">F-6 (결혼이민)</option>
+            <option value="D-4">D-4 (어학연수)</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>전화번호</label>
+          <input type="text" class="form-control" id="s_phone" placeholder="예: 010-1234-5678">
+        </div>
+        <div class="form-group">
+          <label>소속 반</label>
+          <select class="form-control" id="s_group">
+            <option value="">반 미배정</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>주소</label>
+        <input type="text" class="form-control" id="s_address" placeholder="예: 울산광역시 남구...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('studentModal')">취소</button>
+      <button class="btn btn-primary" onclick="saveStudent()">✅ 저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 선생님 학생 보기 모달 ─── -->
+<div class="modal-overlay" id="teacherStudentsModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span id="tsModalTitle">📋 학생 목록</span>
+      <button class="modal-close" onclick="closeModal('teacherStudentsModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>이름</th><th>성별</th><th>비자</th><th>소속 반</th></tr></thead>
+          <tbody id="tsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = (path, opts = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...opts.headers }
+    }).then(async r => {
+      if (r.status === 401) { logout(); return; }
+      return r.json();
+    });
+  };
+
+  // 권한 확인
+  if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'admin') {
+    window.location.href = 'index.html';
+  }
+  document.getElementById('sidebarName').textContent = localStorage.getItem('name') || '관리자';
+
+  let allStudents = [], allGroups = [], currentPwTeacherId = null;
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = 'index.html';
+  }
+
+  function showAlert(msg, type = 'success') {
+    const area = document.getElementById('alertArea');
+    area.innerHTML = `<div class="alert alert-${type}"><span>${type === 'success' ? '✅' : '⚠️'}</span> ${msg}</div>`;
+    setTimeout(() => area.innerHTML = '', 3500);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  const pages = ['dashboard', 'teachers', 'students', 'groups'];
+  const pageTitles = { dashboard: '대시보드', teachers: '선생님 관리', students: '학생 관리', groups: '그룹/반 현황' };
+
+  function showPage(name) {
+    pages.forEach(p => {
+      document.getElementById(`page-${p}`).style.display = p === name ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', pages[i] === name));
+    document.getElementById('topbarTitle').textContent = pageTitles[name];
+
+    if (name === 'dashboard') loadDashboard();
+    else if (name === 'teachers') loadTeachers();
+    else if (name === 'students') loadStudents();
+    else if (name === 'groups') loadGroups();
+  }
+
+  // ─── 대시보드 ──────────────────────────────────────────
+  async function loadDashboard() {
+    const stats = await API('/api/admin/stats');
+    document.getElementById('stat-teachers').textContent = stats.teachers;
+    document.getElementById('stat-groups').textContent = stats.groups;
+    document.getElementById('stat-students').textContent = stats.students;
+    document.getElementById('stat-lessons').textContent = stats.lessons;
+
+    const students = await API('/api/admin/students');
+    const tbody = document.getElementById('recentBody');
+    const recent = students.slice(0, 10);
+    if (!recent.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:30px">등록된 학생이 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = recent.map(s => `
+      <tr>
+        <td><strong>${s.name}</strong></td>
+        <td>${s.gender ? `<span class="badge badge-${s.gender==='남'?'primary':'accent'}" style="${s.gender==='여'?'background:#fce7f3;color:#9d174d':''}">${s.gender}</span>` : '-'}</td>
+        <td>${s.visa_type ? `<span class="badge badge-warning">${s.visa_type}</span>` : '-'}</td>
+        <td>${s.nationality || '-'}</td>
+        <td>${s.group_name ? `<span class="badge badge-primary">${s.group_name}</span>` : '<span class="badge badge-gray">미배정</span>'}</td>
+        <td>${s.teacher_name || '-'}</td>
+        <td style="color:#64748b;font-size:12px">${s.created_at?.slice(0,10) || '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── 선생님 ────────────────────────────────────────────
+  async function loadTeachers() {
+    const teachers = await API('/api/admin/teachers');
+    const tbody = document.getElementById('teacherBody');
+    if (!teachers.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:30px">등록된 선생님이 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = teachers.map(t => `
+      <tr>
+        <td><strong>${t.name}</strong></td>
+        <td><code style="background:#f1f5f9;padding:2px 7px;border-radius:4px;font-size:12px">${t.username}</code></td>
+        <td><span class="badge badge-primary">${t.group_count}개</span></td>
+        <td><span class="badge badge-success">${t.student_count}명</span></td>
+        <td style="color:#64748b;font-size:12px">${t.created_at?.slice(0,10)}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="viewTeacherStudents(${t.id},'${t.name}')">👥 학생 보기</button>
+            <button class="btn btn-outline btn-sm" onclick="openPwModal(${t.id},'${t.name}')">🔑 비번</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTeacher(${t.id},'${t.name}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function addTeacher() {
+    const name = document.getElementById('t_name').value.trim();
+    const username = document.getElementById('t_username').value.trim();
+    const password = document.getElementById('t_password').value;
+    if (!name || !username || !password) return showAlert('모든 항목을 입력하세요', 'error');
+
+    const res = await API('/api/admin/teachers', {
+      method: 'POST', body: JSON.stringify({ name, username, password })
+    });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    closeModal('teacherModal');
+    ['t_name','t_username','t_password'].forEach(id => document.getElementById(id).value = '');
+    loadTeachers();
+  }
+
+  async function deleteTeacher(id, name) {
+    if (!confirm(`'${name}' 선생님을 삭제하시겠습니까?\n담당 그룹도 함께 삭제됩니다.`)) return;
+    const res = await API(`/api/admin/teachers/${id}`, { method: 'DELETE' });
+    showAlert(res.message);
+    loadTeachers();
+  }
+
+  function openPwModal(id, name) {
+    currentPwTeacherId = id;
+    document.getElementById('pwTeacherName').textContent = `선생님: ${name}`;
+    document.getElementById('newPassword').value = '';
+    openModal('pwModal');
+  }
+
+  async function changePassword() {
+    const password = document.getElementById('newPassword').value;
+    if (!password) return showAlert('새 비밀번호를 입력하세요', 'error');
+    const res = await API(`/api/admin/teachers/${currentPwTeacherId}/password`, {
+      method: 'PUT', body: JSON.stringify({ password })
+    });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    closeModal('pwModal');
+  }
+
+  async function viewTeacherStudents(id, name) {
+    document.getElementById('tsModalTitle').textContent = `📋 ${name} 선생님 학생 목록`;
+    const students = await API(`/api/admin/teachers/${id}/students`);
+    const tbody = document.getElementById('tsBody');
+    if (!students.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px">학생이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = students.map(s => `
+        <tr>
+          <td><strong>${s.name}</strong></td>
+          <td>${s.gender || '-'}</td>
+          <td>${s.visa_type ? `<span class="badge badge-warning">${s.visa_type}</span>` : '-'}</td>
+          <td><span class="badge badge-primary">${s.group_name}</span></td>
+        </tr>
+      `).join('');
+    }
+    openModal('teacherStudentsModal');
+  }
+
+  // ─── 학생 ──────────────────────────────────────────────
+  async function loadStudents() {
+    allStudents = await API('/api/admin/students');
+    allGroups = await API('/api/admin/groups');
+
+    // 필터 드롭다운
+    const gf = document.getElementById('groupFilter');
+    gf.innerHTML = '<option value="">모든 반</option>' +
+      allGroups.map(g => `<option value="${g.id}">${g.name} (${g.teacher_name})</option>`).join('');
+
+    renderStudents(allStudents);
+  }
+
+  function renderStudents(students) {
+    const tbody = document.getElementById('studentBody');
+    if (!students.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px">학생이 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = students.map((s, i) => `
+      <tr>
+        <td style="color:#94a3b8">${i+1}</td>
+        <td><strong>${s.name}</strong></td>
+        <td>${s.gender ? `<span class="badge" style="${s.gender==='남'?'background:#dbeafe;color:#1e40af':'background:#fce7f3;color:#9d174d'}">${s.gender}</span>` : '-'}</td>
+        <td>${s.nationality || '-'}</td>
+        <td>${s.visa_type ? `<span class="badge badge-warning">${s.visa_type}</span>` : '-'}</td>
+        <td style="font-size:12px">${s.phone || '-'}</td>
+        <td>${s.group_name ? `<span class="badge badge-primary">${s.group_name}</span>` : '<span class="badge badge-gray">미배정</span>'}</td>
+        <td style="font-size:12px">${s.teacher_name || '-'}</td>
+        <td>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-outline btn-sm" onclick="editStudent(${s.id})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterStudents() {
+    const q = document.getElementById('studentSearch').value.toLowerCase();
+    const gid = document.getElementById('groupFilter').value;
+    const filtered = allStudents.filter(s => {
+      const matchName = s.name.toLowerCase().includes(q);
+      const matchGroup = !gid || String(s.group_id) === gid;
+      return matchName && matchGroup;
+    });
+    renderStudents(filtered);
+  }
+
+  async function loadGroupsForSelect() {
+    const groups = await API('/api/admin/groups');
+    const sel = document.getElementById('s_group');
+    sel.innerHTML = '<option value="">반 미배정</option>' +
+      groups.map(g => `<option value="${g.id}">${g.name} (${g.teacher_name})</option>`).join('');
+  }
+
+  function openAddStudentModal() {
+    document.getElementById('studentModalTitle').textContent = '👨‍🎓 학생 추가';
+    document.getElementById('s_id').value = '';
+    ['s_name','s_nationality','s_phone','s_address'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('s_gender').value = '';
+    document.getElementById('s_visa').value = '';
+    loadGroupsForSelect();
+    openModal('studentModal');
+  }
+
+  function editStudent(id) {
+    const s = allStudents.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('studentModalTitle').textContent = '✏️ 학생 정보 수정';
+    document.getElementById('s_id').value = s.id;
+    document.getElementById('s_name').value = s.name;
+    document.getElementById('s_gender').value = s.gender || '';
+    document.getElementById('s_nationality').value = s.nationality || '';
+    document.getElementById('s_visa').value = s.visa_type || '';
+    document.getElementById('s_phone').value = s.phone || '';
+    document.getElementById('s_address').value = s.address || '';
+    loadGroupsForSelect().then(() => {
+      if (s.group_id) document.getElementById('s_group').value = s.group_id;
+    });
+    openModal('studentModal');
+  }
+
+  async function saveStudent() {
+    const id = document.getElementById('s_id').value;
+    const body = {
+      name: document.getElementById('s_name').value.trim(),
+      gender: document.getElementById('s_gender').value,
+      nationality: document.getElementById('s_nationality').value.trim(),
+      visa_type: document.getElementById('s_visa').value,
+      phone: document.getElementById('s_phone').value.trim(),
+      address: document.getElementById('s_address').value.trim(),
+      group_id: document.getElementById('s_group').value || null
+    };
+    if (!body.name) return showAlert('이름을 입력하세요', 'error');
+
+    const res = id
+      ? await API(`/api/admin/students/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+      : await API('/api/admin/students', { method: 'POST', body: JSON.stringify(body) });
+
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    closeModal('studentModal');
+    loadStudents();
+  }
+
+  async function deleteStudent(id, name) {
+    if (!confirm(`'${name}' 학생을 삭제하시겠습니까?`)) return;
+    const res = await API(`/api/admin/students/${id}`, { method: 'DELETE' });
+    showAlert(res.message);
+    loadStudents();
+  }
+
+  // ─── 그룹 현황 ─────────────────────────────────────────
+  async function loadGroups() {
+    const groups = await API('/api/admin/groups');
+    const container = document.getElementById('groupCards');
+    if (!groups.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>등록된 그룹이 없습니다.<br>선생님이 그룹을 생성하면 여기에 표시됩니다.</p></div>';
+      return;
+    }
+    container.innerHTML = groups.map(g => `
+      <div class="card">
+        <div class="card-header">
+          <span>📚 ${g.name}</span>
+          <span class="badge badge-success">${g.student_count}명</span>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:13px;color:#64748b">담당 선생님:</span>
+            <strong style="font-size:13px">${g.teacher_name}</strong>
+          </div>
+          <div style="background:#f8fafc;border-radius:8px;padding:10px;font-size:12px;color:#64748b">
+            📅 개설일: ${g.created_at?.slice(0,10)}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 초기 로드
+  loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국어 수업 관리 시스템 - 울산 외국인 근로자 지원센터</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #001f5c 0%, #003087 50%, #1a4aa0 100%); }
+    .login-wrap { width: 100%; max-width: 420px; padding: 20px; }
+    .login-card { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+    .login-header {
+      background: linear-gradient(135deg, #001f5c, #003087);
+      padding: 32px 36px; text-align: center;
+    }
+    .login-header .flag { font-size: 40px; margin-bottom: 10px; }
+    .login-header h1 { color: white; font-size: 18px; font-weight: 800; line-height: 1.4; }
+    .login-header p { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 6px; }
+    .login-body { padding: 32px 36px; }
+    .login-body h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+    .login-body .sub { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+    .login-btn {
+      width: 100%; padding: 13px; background: #003087; color: white;
+      border: none; border-radius: 9px; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .login-btn:hover { background: #1a4aa0; transform: translateY(-1px); }
+    .login-btn:active { transform: translateY(0); }
+    #errorMsg { display: none; }
+    .input-icon { position: relative; }
+    .input-icon .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8; }
+    .input-icon input { padding-left: 38px; }
+    .divider { text-align: center; color: #94a3b8; font-size: 12px; margin: 20px 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: #e2e8f0; }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+    .default-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #64748b; }
+    .default-info strong { color: #1e293b; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="flag">🇰🇷</div>
+        <h1>울산 외국인 근로자 지원센터<br>한국어 수업 관리 시스템</h1>
+        <p>Korean Language Class Management System</p>
+      </div>
+      <div class="login-body">
+        <h2>로그인</h2>
+        <p class="sub">관리자 또는 선생님 계정으로 로그인하세요</p>
+
+        <div id="errorMsg" class="alert alert-error">
+          <span>⚠️</span> <span id="errorText"></span>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label>아이디</label>
+            <div class="input-icon">
+              <span class="icon">👤</span>
+              <input type="text" id="username" class="form-control" placeholder="아이디를 입력하세요" required autocomplete="username">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>비밀번호</label>
+            <div class="input-icon">
+              <span class="icon">🔒</span>
+              <input type="password" id="password" class="form-control" placeholder="비밀번호를 입력하세요" required autocomplete="current-password">
+            </div>
+          </div>
+          <button type="submit" class="login-btn" id="loginBtn">
+            <span id="btnText">로그인</span>
+          </button>
+        </form>
+
+        <div class="divider">기본 관리자 계정</div>
+        <div class="default-info">
+          아이디: <strong>admin</strong> &nbsp;|&nbsp; 비밀번호: <strong>admin123</strong><br>
+          <small style="color:#94a3b8">⚠️ 처음 로그인 후 비밀번호를 변경하세요</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 이미 로그인된 경우 리다이렉트
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (token && role) {
+      window.location.href = role === 'admin' ? 'admin.html' : 'teacher.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const btnText = document.getElementById('btnText');
+      const errorMsg = document.getElementById('errorMsg');
+      const errorText = document.getElementById('errorText');
+
+      btnText.innerHTML = '<span class="spinner"></span>';
+      btn.disabled = true;
+      errorMsg.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorText.textContent = data.error;
+          errorMsg.style.display = 'flex';
+          return;
+        }
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('name', data.name);
+        localStorage.setItem('userId', data.id);
+
+        window.location.href = data.role === 'admin' ? 'admin.html' : 'teacher.html';
+      } catch {
+        errorText.textContent = '서버에 연결할 수 없습니다';
+        errorMsg.style.display = 'flex';
+      } finally {
+        btnText.textContent = '로그인';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

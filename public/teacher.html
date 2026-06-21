@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>선생님 패널 - 한국어 수업 관리</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .group-card {
+      background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+      overflow: hidden;
+    }
+    .group-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+    .group-card-header { background: linear-gradient(135deg, #003087, #1a4aa0); padding: 20px; color: white; }
+    .group-card-body { padding: 16px; }
+    .lesson-row { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+    .lesson-row-header {
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; background: #f8fafc;
+    }
+    .lesson-row-header:hover { background: #f0f4f8; }
+    .lesson-body { display: none; padding: 0; border-top: 1px solid var(--border); }
+    .lesson-body.open { display: block; }
+    .att-cell { display: flex; gap: 5px; align-items: center; }
+    #breadcrumb { display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;margin-bottom:16px;flex-wrap:wrap; }
+    #breadcrumb span.sep { color:#cbd5e1; }
+    #breadcrumb strong { color:var(--text); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div style="font-size:28px;margin-bottom:6px">🇰🇷</div>
+      <div class="logo-text">울산 외국인 근로자<br>지원센터</div>
+      <div class="logo-sub">한국어 수업 관리</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sidebarName">선생님</div>
+      <div class="user-role">👩‍🏫 선생님</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPage('groups')">
+        <span class="nav-icon">📚</span> 내 그룹/반
+      </button>
+      <button class="nav-item" id="navStudents" style="display:none" onclick="showPage('students')">
+        <span class="nav-icon">👨‍🎓</span> 학생 목록
+      </button>
+      <button class="nav-item" id="navLessons" style="display:none" onclick="showPage('lessons')">
+        <span class="nav-icon">📖</span> 수업 관리
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-item" onclick="logout()" style="color:#f87171">
+        <span class="nav-icon">🚪</span> 로그아웃
+      </button>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">내 그룹/반</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:#64748b" id="topbarName"></span>
+        <span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">선생님</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div id="alertArea"></div>
+      <div id="breadcrumb" style="display:none"></div>
+
+      <!-- ─── 그룹 목록 ─── -->
+      <div id="page-groups">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:16px;font-weight:800">내 그룹/반</h2>
+            <p style="color:#64748b;font-size:12px;margin-top:2px">담당하는 반을 관리합니다</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('groupModal')">➕ 그룹 만들기</button>
+        </div>
+
+        <div id="groupGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          <div class="empty-state"><div class="empty-icon">⏳</div><p>로딩 중...</p></div>
+        </div>
+      </div>
+
+      <!-- ─── 학생 목록 ─── -->
+      <div id="page-students" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span>👨‍🎓 학생 목록</span>
+            <span class="badge badge-primary" id="studentCountBadge">0명</span>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>이름</th><th>성별</th><th>국적</th><th>비자</th><th>전화번호</th><th>주소</th><th>출석률</th><th>평균점수</th></tr>
+                </thead>
+                <tbody id="studentBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 수업 관리 ─── -->
+      <div id="page-lessons" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:16px;font-weight:800">수업 관리</h2>
+            <p style="color:#64748b;font-size:12px;margin-top:2px">수업별 출석 및 성적을 기록합니다</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('lessonModal')">➕ 수업 추가</button>
+        </div>
+        <div id="lessonList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ─── 그룹 생성 모달 ─── -->
+<div class="modal-overlay" id="groupModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>📚 그룹/반 만들기</span>
+      <button class="modal-close" onclick="closeModal('groupModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>반 이름 *</label>
+        <input type="text" class="form-control" id="g_name" placeholder="예: 초급반 A, 중급반 1기...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('groupModal')">취소</button>
+      <button class="btn btn-primary" onclick="createGroup()">✅ 만들기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 수업 추가 모달 ─── -->
+<div class="modal-overlay" id="lessonModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>📖 수업 추가</span>
+      <button class="modal-close" onclick="closeModal('lessonModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>수업 날짜 *</label>
+        <input type="date" class="form-control" id="l_date">
+      </div>
+      <div class="form-group">
+        <label>수업 제목/내용 (선택)</label>
+        <input type="text" class="form-control" id="l_title" placeholder="예: 1과 - 인사하기, 숫자 읽기...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('lessonModal')">취소</button>
+      <button class="btn btn-primary" onclick="addLesson()">✅ 추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 학생 통계 모달 ─── -->
+<div class="modal-overlay" id="statsModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span id="statsModalTitle">📊 학생 통계</span>
+      <button class="modal-close" onclick="closeModal('statsModal')">×</button>
+    </div>
+    <div class="modal-body" id="statsModalBody"></div>
+  </div>
+</div>
+
+<script>
+  const API = (path, opts = {}) => {
+    const token = localStorage.getItem('token');
+    return fetch(path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...opts.headers }
+    }).then(async r => {
+      if (r.status === 401) { logout(); return; }
+      return r.json();
+    });
+  };
+
+  if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'teacher') {
+    window.location.href = 'index.html';
+  }
+
+  const teacherName = localStorage.getItem('name') || '선생님';
+  document.getElementById('sidebarName').textContent = teacherName;
+  document.getElementById('topbarName').textContent = teacherName;
+
+  let currentGroup = null;
+  let currentStudents = [];
+  let currentLessons = [];
+
+  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+  function showAlert(msg, type = 'success') {
+    const area = document.getElementById('alertArea');
+    area.innerHTML = `<div class="alert alert-${type}"><span>${type==='success'?'✅':'⚠️'}</span> ${msg}</div>`;
+    setTimeout(() => area.innerHTML = '', 3000);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  const pages = ['groups', 'students', 'lessons'];
+  const pageTitles = { groups: '내 그룹/반', students: '학생 목록', lessons: '수업 관리' };
+
+  function showPage(name) {
+    pages.forEach(p => document.getElementById(`page-${p}`).style.display = p === name ? '' : 'none');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`nav${name.charAt(0).toUpperCase()+name.slice(1)}`)?.classList.add('active');
+    document.querySelectorAll('.nav-item')[0].classList.toggle('active', name === 'groups');
+    document.getElementById('topbarTitle').textContent = pageTitles[name] || '';
+
+    const bc = document.getElementById('breadcrumb');
+    if (currentGroup && name !== 'groups') {
+      bc.style.display = 'flex';
+      bc.innerHTML = `
+        <button onclick="showPage('groups')" style="background:none;border:none;cursor:pointer;color:#3b82f6;font-size:13px;font-weight:600;padding:0">📚 내 그룹</button>
+        <span class="sep">›</span>
+        <strong>${currentGroup.name}</strong>
+        <span class="sep">›</span>
+        <span>${pageTitles[name]}</span>
+      `;
+    } else {
+      bc.style.display = 'none';
+    }
+  }
+
+  // ─── 그룹 ──────────────────────────────────────────────
+  async function loadGroups() {
+    const groups = await API('/api/teacher/groups');
+    const grid = document.getElementById('groupGrid');
+
+    if (!groups.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📭</div>
+        <p>아직 그룹이 없습니다.<br>오른쪽 위의 '그룹 만들기' 버튼을 눌러 시작하세요!</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = groups.map(g => `
+      <div class="group-card" onclick="selectGroup(${g.id}, '${g.name}')">
+        <div class="group-card-header">
+          <div style="font-size:22px;margin-bottom:6px">📚</div>
+          <div style="font-size:17px;font-weight:800">${g.name}</div>
+          <div style="font-size:12px;opacity:0.7;margin-top:4px">클릭하여 관리</div>
+        </div>
+        <div class="group-card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="text-align:center;flex:1">
+              <div style="font-size:22px;font-weight:800;color:var(--primary)">${g.student_count}</div>
+              <div style="font-size:11px;color:#64748b">학생</div>
+            </div>
+            <div style="width:1px;background:#e2e8f0;height:36px"></div>
+            <div style="text-align:center;flex:1">
+              <div style="font-size:12px;color:#64748b">${g.created_at?.slice(0,10)}</div>
+              <div style="font-size:11px;color:#94a3b8">개설일</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px">
+            <button class="btn btn-outline btn-sm" style="flex:1" onclick="event.stopPropagation();selectGroup(${g.id},'${g.name}','students')">👥 학생</button>
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="event.stopPropagation();selectGroup(${g.id},'${g.name}','lessons')">📖 수업</button>
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteGroup(${g.id},'${g.name}')">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function selectGroup(id, name, page = 'students') {
+    currentGroup = { id, name };
+    document.getElementById('navStudents').style.display = '';
+    document.getElementById('navLessons').style.display = '';
+    await loadGroupStudents(id);
+    await loadGroupLessons(id);
+    showPage(page);
+  }
+
+  async function createGroup() {
+    const name = document.getElementById('g_name').value.trim();
+    if (!name) return showAlert('반 이름을 입력하세요', 'error');
+    const res = await API('/api/teacher/groups', { method: 'POST', body: JSON.stringify({ name }) });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    closeModal('groupModal');
+    document.getElementById('g_name').value = '';
+    loadGroups();
+  }
+
+  async function deleteGroup(id, name) {
+    if (!confirm(`'${name}' 반을 삭제하시겠습니까?\n수업 및 출석 기록도 모두 삭제됩니다.`)) return;
+    const res = await API(`/api/teacher/groups/${id}`, { method: 'DELETE' });
+    showAlert(res.message);
+    currentGroup = null;
+    document.getElementById('navStudents').style.display = 'none';
+    document.getElementById('navLessons').style.display = 'none';
+    showPage('groups');
+    loadGroups();
+  }
+
+  // ─── 학생 ──────────────────────────────────────────────
+  async function loadGroupStudents(groupId) {
+    const data = await API(`/api/teacher/groups/${groupId}/students`);
+    currentStudents = data.students || [];
+    const tbody = document.getElementById('studentBody');
+    document.getElementById('studentCountBadge').textContent = `${currentStudents.length}명`;
+
+    if (!currentStudents.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:30px">
+        학생이 없습니다.<br>관리자 패널에서 학생을 추가하고 이 반에 배정하면 표시됩니다.
+      </td></tr>`;
+      return;
+    }
+
+    // 각 학생 통계 로드 (병렬)
+    const statsPromises = currentStudents.map(s => API(`/api/student/${s.id}/stats`));
+    const stats = await Promise.all(statsPromises);
+
+    tbody.innerHTML = currentStudents.map((s, i) => {
+      const st = stats[i];
+      const total = st?.att?.total || 0;
+      const present = st?.att?.present_count || 0;
+      const attPct = total ? Math.round(present / total * 100) : null;
+      const avg = st?.avgScore;
+
+      const attColor = attPct === null ? '#94a3b8' : attPct >= 80 ? 'var(--success)' : attPct >= 50 ? 'var(--warning)' : 'var(--danger)';
+      const avgColor = avg === null ? '#94a3b8' : avg >= 80 ? 'var(--success)' : avg >= 50 ? 'var(--warning)' : 'var(--danger)';
+
+      return `
+        <tr>
+          <td style="color:#94a3b8">${i+1}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#003087,#1a4aa0);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
+                ${s.name.charAt(0)}
+              </div>
+              <strong>${s.name}</strong>
+            </div>
+          </td>
+          <td>${s.gender ? `<span class="badge" style="${s.gender==='남'?'background:#dbeafe;color:#1e40af':'background:#fce7f3;color:#9d174d'}">${s.gender}</span>` : '-'}</td>
+          <td style="font-size:12px">${s.nationality || '-'}</td>
+          <td>${s.visa_type ? `<span class="badge badge-warning">${s.visa_type}</span>` : '-'}</td>
+          <td style="font-size:12px">${s.phone || '-'}</td>
+          <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.address||''}">${s.address || '-'}</td>
+          <td>
+            ${attPct !== null ? `
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="progress-bar-wrap" style="width:50px">
+                  <div class="progress-bar" style="width:${attPct}%;background:${attColor}"></div>
+                </div>
+                <span style="font-size:12px;font-weight:700;color:${attColor}">${attPct}%</span>
+              </div>
+            ` : '<span style="color:#94a3b8;font-size:12px">-</span>'}
+          </td>
+          <td>
+            ${avg !== null ? `<span style="font-weight:700;color:${avgColor}">${avg}%</span>`
+            : '<span style="color:#94a3b8;font-size:12px">-</span>'}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ─── 수업 ──────────────────────────────────────────────
+  async function loadGroupLessons(groupId) {
+    currentLessons = await API(`/api/teacher/groups/${groupId}/lessons`);
+    renderLessons();
+  }
+
+  function renderLessons() {
+    const container = document.getElementById('lessonList');
+    if (!currentLessons.length) {
+      container.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>아직 수업이 없습니다.<br>'수업 추가' 버튼으로 수업을 등록하세요.</p>
+      </div>`;
+      return;
+    }
+
+    container.innerHTML = currentLessons.map(l => `
+      <div class="lesson-row" id="lesson-${l.id}">
+        <div class="lesson-row-header" onclick="toggleLesson(${l.id})">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="background:var(--primary);color:white;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700">
+              ${l.lesson_date}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px">${l.title || '수업'}</div>
+              <div style="font-size:11px;color:#64748b">클릭하여 출석/성적 기록</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px" id="arrow-${l.id}">▼</span>
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLesson(${l.id})" title="수업 삭제">🗑️</button>
+          </div>
+        </div>
+        <div class="lesson-body" id="body-${l.id}"></div>
+      </div>
+    `).join('');
+  }
+
+  async function toggleLesson(lessonId) {
+    const body = document.getElementById(`body-${lessonId}`);
+    const arrow = document.getElementById(`arrow-${lessonId}`);
+    const isOpen = body.classList.contains('open');
+
+    // 모두 닫기
+    document.querySelectorAll('.lesson-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('[id^="arrow-"]').forEach(a => a.textContent = '▼');
+
+    if (!isOpen) {
+      body.innerHTML = '<div style="padding:20px;text-align:center"><div class="spinner"></div></div>';
+      body.classList.add('open');
+      arrow.textContent = '▲';
+      await loadLessonRecords(lessonId);
+    }
+  }
+
+  async function loadLessonRecords(lessonId) {
+    const data = await API(`/api/teacher/lessons/${lessonId}/records`);
+    const body = document.getElementById(`body-${lessonId}`);
+
+    if (!data.records || !data.records.length) {
+      body.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8">이 반에 학생이 없습니다</div>';
+      return;
+    }
+
+    body.innerHTML = `
+      <div style="padding:16px">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn btn-success btn-sm" onclick="markAll(${lessonId}, true)">✅ 전체 출석</button>
+          <button class="btn btn-danger btn-sm" onclick="markAll(${lessonId}, false)">❌ 전체 결석</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>학생 이름</th>
+                <th>출석</th>
+                <th>성적 (%)</th>
+                <th>저장</th>
+              </tr>
+            </thead>
+            <tbody id="records-${lessonId}">
+              ${data.records.map(r => `
+                <tr id="row-${lessonId}-${r.id}">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#003087,#1a4aa0);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">
+                        ${r.name.charAt(0)}
+                      </div>
+                      <strong>${r.name}</strong>
+                      ${r.gender ? `<span style="font-size:11px;color:#94a3b8">(${r.gender})</span>` : ''}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="att-cell">
+                      <button class="att-btn ${r.present===1?'present':r.present===0?'absent':'none'}"
+                        id="att-${lessonId}-${r.id}"
+                        onclick="toggleAttendance(${lessonId}, ${r.id}, this)">
+                        ${r.present===1?'출석':r.present===0?'결석':'미기록'}
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <input type="number" class="score-input" id="score-${lessonId}-${r.id}"
+                        value="${r.score !== null ? r.score : ''}" min="0" max="100" step="10"
+                        placeholder="-"
+                        onkeydown="if(event.key==='Enter') saveGrade(${lessonId},${r.id})">
+                      <span style="font-size:12px;color:#94a3b8">%</span>
+                      ${r.score !== null ? `<span class="score-badge ${r.score>=80?'score-high':r.score>=50?'score-mid':'score-low'}">${r.score}%</span>` : ''}
+                    </div>
+                  </td>
+                  <td>
+                    <button class="btn btn-success btn-sm" onclick="saveGrade(${lessonId},${r.id})">💾 저장</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  async function toggleAttendance(lessonId, studentId, btn) {
+    const states = ['none', 'present', 'absent'];
+    const labels = { none: '미기록', present: '출석', absent: '결석' };
+    const current = btn.classList.contains('present') ? 'present' : btn.classList.contains('absent') ? 'absent' : 'none';
+    const next = current === 'none' ? 'present' : current === 'present' ? 'absent' : 'present';
+
+    // 즉시 UI 업데이트
+    btn.className = `att-btn ${next}`;
+    btn.textContent = labels[next];
+
+    if (next !== 'none') {
+      await API(`/api/teacher/lessons/${lessonId}/attendance`, {
+        method: 'POST',
+        body: JSON.stringify({ student_id: studentId, present: next === 'present' })
+      });
+    }
+  }
+
+  async function markAll(lessonId, present) {
+    const rows = document.querySelectorAll(`#records-${lessonId} tr`);
+    const promises = [];
+    rows.forEach(row => {
+      const idMatch = row.id.match(/row-\d+-(\d+)/);
+      if (!idMatch) return;
+      const studentId = parseInt(idMatch[1]);
+      const btn = document.getElementById(`att-${lessonId}-${studentId}`);
+      if (btn) {
+        btn.className = `att-btn ${present ? 'present' : 'absent'}`;
+        btn.textContent = present ? '출석' : '결석';
+        promises.push(API(`/api/teacher/lessons/${lessonId}/attendance`, {
+          method: 'POST', body: JSON.stringify({ student_id: studentId, present })
+        }));
+      }
+    });
+    await Promise.all(promises);
+    showAlert(present ? '전체 출석으로 기록되었습니다' : '전체 결석으로 기록되었습니다');
+  }
+
+  async function saveGrade(lessonId, studentId) {
+    const input = document.getElementById(`score-${lessonId}-${studentId}`);
+    const score = parseInt(input.value);
+    if (isNaN(score) || score < 0 || score > 100) {
+      showAlert('0~100 사이의 점수를 입력하세요', 'error');
+      return;
+    }
+    const res = await API(`/api/teacher/lessons/${lessonId}/grade`, {
+      method: 'POST', body: JSON.stringify({ student_id: studentId, score })
+    });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(`점수 ${score}%가 저장되었습니다`);
+    // 배지 업데이트
+    const badgeHtml = `<span class="score-badge ${score>=80?'score-high':score>=50?'score-mid':'score-low'}">${score}%</span>`;
+    const badgeContainer = input.parentElement;
+    const oldBadge = badgeContainer.querySelector('.score-badge');
+    if (oldBadge) oldBadge.remove();
+    badgeContainer.insertAdjacentHTML('beforeend', badgeHtml);
+  }
+
+  async function addLesson() {
+    const date = document.getElementById('l_date').value;
+    const title = document.getElementById('l_title').value.trim();
+    if (!date) return showAlert('수업 날짜를 선택하세요', 'error');
+    if (!currentGroup) return showAlert('반을 먼저 선택하세요', 'error');
+
+    const res = await API('/api/teacher/lessons', {
+      method: 'POST', body: JSON.stringify({ group_id: currentGroup.id, lesson_date: date, title })
+    });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    closeModal('lessonModal');
+    document.getElementById('l_date').value = '';
+    document.getElementById('l_title').value = '';
+    await loadGroupLessons(currentGroup.id);
+  }
+
+  async function deleteLesson(id) {
+    if (!confirm('이 수업을 삭제하시겠습니까?\n출석 및 성적 기록도 모두 삭제됩니다.')) return;
+    const res = await API(`/api/teacher/lessons/${id}`, { method: 'DELETE' });
+    if (res.error) return showAlert(res.error, 'error');
+    showAlert(res.message);
+    await loadGroupLessons(currentGroup.id);
+  }
+
+  // 오늘 날짜 기본값
+  document.getElementById('l_date').value = new Date().toISOString().slice(0, 10);
+
+  // 초기 로드
+  loadGroups();
+</script>
+</body>
+</html>
