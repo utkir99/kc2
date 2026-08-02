@@ -323,7 +323,7 @@
 
   // 권한 확인
   if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'admin') {
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
   }
   document.getElementById('sidebarName').textContent = localStorage.getItem('name') || '관리자';
 
@@ -331,7 +331,7 @@
 
   function logout() {
     localStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
   }
 
   function showAlert(msg, type = 'success') {

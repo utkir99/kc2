@@ -193,7 +193,7 @@
   };
 
   if (!localStorage.getItem('token') || localStorage.getItem('role') !== 'teacher') {
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
   }
 
   const teacherName = localStorage.getItem('name') || '선생님';
@@ -204,7 +204,7 @@
   let currentStudents = [];
   let currentLessons = [];
 
-  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
   function showAlert(msg, type = 'success') {
     const area = document.getElementById('alertArea');
