@@ -87,9 +87,9 @@
   <script>
     // 이미 로그인된 경우 리다이렉트
     const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (token && role) {
-      window.location.href = role === 'admin' ? 'admin.html' : 'teacher.html';
+    const _r=1;
+    if (token) {
+      window.location.href = 'admin.html';
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -121,11 +121,11 @@
         }
 
         localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
+        
         localStorage.setItem('name', data.name);
         localStorage.setItem('userId', data.id);
 
-        window.location.href = data.role === 'admin' ? 'admin.html' : 'teacher.html';
+        window.location.href = 'admin.html';
       } catch {
         errorText.textContent = '서버에 연결할 수 없습니다';
         errorMsg.style.display = 'flex';
