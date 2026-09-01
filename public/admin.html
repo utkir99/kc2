@@ -45,6 +45,8 @@
     .btn-sm:hover { background: #f8fafc; border-color: #cbd5e1; }
     .btn-sm.excel { background: #0f6e56; border-color: #0f6e56; color: white; }
     .btn-sm.excel:hover { background: #085041; }
+    .btn-sm.excel-full { background: #1a4aa0; border-color: #1a4aa0; color: white; }
+    .btn-sm.excel-full:hover { background: #123a80; }
     .btn-sm.danger { color: #dc2626; }
     .btn-sm.danger:hover { background: #fef2f2; border-color: #fca5a5; }
 
@@ -116,6 +118,7 @@
       <h3 id="studentsTitle">학생 명단</h3>
       <div style="display:flex;gap:8px">
         <button class="btn-sm excel" onclick="downloadExcel(currentGroupId)">⬇ Excel 다운로드</button>
+        <button class="btn-sm excel-full" onclick="downloadExcelFull(currentGroupId)">⬇ 전체정보 Excel</button>
         <button class="btn-sm" onclick="openStudentModal()">+ 학생 추가</button>
         <button class="btn-sm" onclick="closeStudents()">✕ 닫기</button>
       </div>
@@ -235,6 +238,7 @@ async function loadGroups() {
       <div class="gcard-btns">
         <button class="btn-sm" onclick="openStudents('${g.id}')">👥 명단 보기</button>
         <button class="btn-sm excel" onclick="downloadExcel('${g.id}')">⬇ Excel</button>
+        <button class="btn-sm excel-full" onclick="downloadExcelFull('${g.id}')">⬇ 전체정보</button>
         <button class="btn-sm" onclick="openGroupModal('${g.id}')">✏ 수정</button>
         <button class="btn-sm danger" onclick="deleteGroup('${g.id}')">🗑</button>
       </div>
@@ -359,6 +363,35 @@ async function downloadExcel(groupId) {
   XLSX.utils.book_append_sheet(wb, ws, '학생 명단');
   const safe = g.name.replace(/[\\/:*?"<>|]/g, '_');
   XLSX.writeFile(wb, `${safe}_학생명단.xlsx`);
+}
+
+// ---- Excel (전체 정보) ----
+async function downloadExcelFull(groupId) {
+  const g = groups.find(x => x.id === groupId);
+  if (!g) return;
+  const data = await api('/api/students?group_id=' + groupId);
+  if (!data) return;
+  if (!data.length) { toast('이 반에는 학생이 없습니다'); return; }
+  const header = ['번호', '이름', '성별', '비자', '국적', '전화번호', '주소', '반'];
+  const rows = [header, ...data.map((s, i) => [
+    i + 1,
+    s.name || '',
+    s.gender || '',
+    s.visa_type || '',
+    s.nationality || '',
+    s.phone || '',
+    s.address || '',
+    g.name || ''
+  ])];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 22 }, { wch: 8 }, { wch: 10 },
+    { wch: 14 }, { wch: 16 }, { wch: 32 }, { wch: 14 }
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '학생 전체정보');
+  const safe = g.name.replace(/[\\/:*?"<>|]/g, '_');
+  XLSX.writeFile(wb, `${safe}_학생전체정보.xlsx`);
 }
 
 // ---- Password ----
